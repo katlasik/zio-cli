@@ -18,9 +18,7 @@ import java.time.{
 }
 
 import zio._
-import HelpDoc.Span.text
-import zio.cli.PathType.File
-import zio.cli.PathType.Directory
+import zio.cli.HelpDoc.Span.text
 
 /**
  * A `PrimType` represents the primitive types supported by ZIO CLI.
@@ -147,15 +145,16 @@ object PrimType {
 
     def choices: Option[String] = Some("true | false")
 
-    def validate(value: Option[String], opts: ParserOptions): IO[String, Boolean] = value match {
-      case Some(value) =>
-        value match {
-          case "true" | "1" | "y" | "yes" | "on"  => IO.succeed(true)
-          case "false" | "0" | "n" | "no" | "off" => IO.succeed(false)
-          case _                                  => IO.fail(s"$value cannot be recognized as valid boolean.")
-        }
-      case None => IO.succeed(defaultValue.get)
-    }
+    def validate(value: Option[String], opts: ParserOptions): IO[String, Boolean] =
+      value.map(opts.normalizeCase) match {
+        case Some(s) =>
+          s match {
+            case "true" | "1" | "y" | "yes" | "on"  => IO.succeed(true)
+            case "false" | "0" | "n" | "no" | "off" => IO.succeed(false)
+            case _                                  => IO.fail(s"$s cannot be recognized as valid boolean.")
+          }
+        case None => IO.succeed(defaultValue.get)
+      }
 
     def helpDoc: HelpDoc.Span = text("A true or false value.")
   }
